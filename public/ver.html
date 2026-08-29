@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta de tareas — Comisario Principal</title>
+  <meta name="description" content="Consulta de tareas del evento (solo lectura) para el equipo." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-icon">👀</span>
+        <div>
+          <h1>Consulta de tareas</h1>
+          <p class="brand-sub">Vista del equipo · solo lectura</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span id="syncStatus" class="sync-status">—</span>
+        <button id="btnImprimir" class="btn btn-ghost" type="button">🖨️ Imprimir / PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card no-print" id="controls">
+      <div class="event-bar">
+        <div class="event-bar-left">
+          <label for="eventSelect" class="label-inline">Evento</label>
+          <select id="eventSelect" class="select"></select>
+        </div>
+        <div class="filters">
+          <label class="label-inline" for="filtroResponsable">Responsable</label>
+          <select id="filtroResponsable" class="select select-sm"><option value="">Todos</option></select>
+
+          <label class="label-inline" for="filtroDia">Día</label>
+          <select id="filtroDia" class="select select-sm"><option value="">Todos</option></select>
+
+          <label class="label-inline" for="filtroEstado">Estado</label>
+          <select id="filtroEstado" class="select select-sm">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="en-proceso">En proceso</option>
+            <option value="completada">Completada</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card empty-state no-print" id="emptyState" hidden>
+      <div class="empty-icon">📋</div>
+      <h2>No hay tareas para mostrar</h2>
+      <p>Todavía no hay eventos publicados o no hay tareas que coincidan con el filtro.</p>
+    </section>
+
+    <section class="card event-header" id="eventHeader" hidden>
+      <div class="event-title-row">
+        <h2 id="eventTitle">—</h2>
+        <span id="eventDates" class="event-dates">—</span>
+      </div>
+      <div class="event-stats" id="eventStats"></div>
+      <p id="filterNote" class="hint" hidden></p>
+    </section>
+
+    <section id="daysContainer" class="days-container"></section>
+  </main>
+
+  <footer class="footer no-print">
+    <p>Comisario Principal · Vista de consulta · raceclubhub.com</p>
+  </footer>
+
+  <script src="ver.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comisario Principal — Organización de tareas</title>
+  <meta name="description" content="App para organizar tareas del comisario principal en eventos de ciclismo." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Barra superior -->
+  <header class="topbar no-print">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-icon">🏁</span>
+        <div>
+          <h1>Comisario Principal</h1>
+          <p class="brand-sub">Organización de tareas del evento</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span id="syncStatus" class="sync-status" title="Estado de guardado">—</span>
+        <button id="btnImprimir" class="btn btn-ghost" type="button">🖨️ Imprimir / PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Selector de eventos -->
+    <section class="card no-print" id="eventBar">
+      <div class="event-bar">
+        <div class="event-bar-left">
+          <label for="eventSelect" class="label-inline">Evento</label>
+          <select id="eventSelect" class="select"></select>
+        </div>
+        <div class="event-bar-actions">
+          <button id="btnNuevoEvento" class="btn btn-primary" type="button">＋ Nuevo evento</button>
+          <button id="btnEditarEvento" class="btn btn-ghost" type="button">✏️ Editar</button>
+          <button id="btnEliminarEvento" class="btn btn-danger-ghost" type="button">🗑️ Eliminar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estado vacío (sin eventos) -->
+    <section class="card empty-state no-print" id="emptyState" hidden>
+      <div class="empty-icon">📋</div>
+      <h2>Aún no hay eventos</h2>
+      <p>Creá tu primer evento para empezar a organizar las tareas del comisario principal.</p>
+      <button id="btnCrearPrimero" class="btn btn-primary" type="button">＋ Crear evento</button>
+    </section>
+
+    <!-- Encabezado del evento (visible e imprimible) -->
+    <section class="card event-header" id="eventHeader" hidden>
+      <div class="event-title-row">
+        <h2 id="eventTitle">—</h2>
+        <span id="eventDates" class="event-dates">—</span>
+      </div>
+      <div class="event-stats" id="eventStats"></div>
+    </section>
+
+    <!-- Barra de acciones de tareas -->
+    <section class="card no-print" id="taskToolbar" hidden>
+      <div class="task-toolbar">
+        <button id="btnNuevaTarea" class="btn btn-primary" type="button">＋ Nueva tarea</button>
+        <div class="filters">
+          <label class="label-inline" for="filtroDia">Día</label>
+          <select id="filtroDia" class="select select-sm"><option value="">Todos</option></select>
+
+          <label class="label-inline" for="filtroEstado">Estado</label>
+          <select id="filtroEstado" class="select select-sm">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="en-proceso">En proceso</option>
+            <option value="completada">Completada</option>
+          </select>
+
+          <label class="label-inline" for="filtroCategoria">Categoría</label>
+          <select id="filtroCategoria" class="select select-sm"><option value="">Todas</option></select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Listado de tareas agrupadas por día -->
+    <section id="daysContainer" class="days-container"></section>
+
+  </main>
+
+  <!-- ===== Modal: Evento ===== -->
+  <div class="modal-backdrop no-print" id="modalEvento" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEventoTitle">
+      <div class="modal-head">
+        <h3 id="modalEventoTitle">Nuevo evento</h3>
+        <button class="modal-close" data-close-modal="modalEvento" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="formEvento" class="modal-body">
+        <label class="field">
+          <span>Nombre del evento *</span>
+          <input type="text" id="evNombre" required placeholder="Ej: Vuelta a Costa Rica 2026" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Fecha de inicio *</span>
+            <input type="date" id="evInicio" required />
+          </label>
+          <label class="field">
+            <span>Fecha de fin *</span>
+            <input type="date" id="evFin" required />
+          </label>
+        </div>
+        <p class="hint">Para eventos de un solo día, poné la misma fecha en inicio y fin.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modalEvento">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar evento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Modal: Tarea ===== -->
+  <div class="modal-backdrop no-print" id="modalTarea" hidden>
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="modalTareaTitle">
+      <div class="modal-head">
+        <h3 id="modalTareaTitle">Nueva tarea</h3>
+        <button class="modal-close" data-close-modal="modalTarea" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="formTarea" class="modal-body">
+        <input type="hidden" id="tId" />
+
+        <label class="field">
+          <span>Tarea / descripción *</span>
+          <input type="text" id="tDescripcion" required placeholder="Ej: Briefing de comisarios" />
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Responsable</span>
+            <input type="text" id="tResponsable" placeholder="Ej: Juan Pérez" />
+          </label>
+          <label class="field">
+            <span>Hora</span>
+            <input type="time" id="tHora" />
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Lugar / ubicación</span>
+            <input type="text" id="tLugar" placeholder="Ej: Línea de salida" />
+          </label>
+          <label class="field">
+            <span>Categoría</span>
+            <select id="tCategoria">
+              <option value="Reunión">Reunión</option>
+              <option value="Briefing">Briefing</option>
+              <option value="Control técnico">Control técnico</option>
+              <option value="Seguridad">Seguridad</option>
+              <option value="Cronometraje">Cronometraje</option>
+              <option value="Logística">Logística</option>
+              <option value="Premiación">Premiación</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Prioridad</span>
+            <select id="tPrioridad">
+              <option value="alta">Alta</option>
+              <option value="media" selected>Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Estado</span>
+            <select id="tEstado">
+              <option value="pendiente" selected>Pendiente</option>
+              <option value="en-proceso">En proceso</option>
+              <option value="completada">Completada</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="field days-picker">
+          <legend>Día(s) del evento *</legend>
+          <p class="hint">Marcá uno o varios días. Útil para tareas repetitivas (ej. briefing diario).</p>
+          <div class="days-checks" id="tDiasChecks"></div>
+          <div class="days-quick">
+            <button type="button" class="btn btn-xs" id="btnTodosDias">Todos</button>
+            <button type="button" class="btn btn-xs" id="btnNingunDia">Ninguno</button>
+          </div>
+        </fieldset>
+
+        <label class="field">
+          <span>Notas / observaciones</span>
+          <textarea id="tNotas" rows="2" placeholder="Detalles adicionales…"></textarea>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modalTarea">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast no-print" hidden></div>
+
+  <footer class="footer no-print">
+    <p>Comisario Principal · raceclubhub.com</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

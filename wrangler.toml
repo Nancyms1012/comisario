@@ -1,0 +1,18 @@
+name = "comisario"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Sirve el frontend estático desde /public
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Almacenamiento en la nube (Workers KV)
+# Crear el namespace con:
+#   npx wrangler@4.120.1 kv namespace create COMISARIO_KV
+# y pegar el id resultante abajo.
+[[kv_namespaces]]
+binding = "COMISARIO_KV"
+id = "REEMPLAZAR_CON_ID_DEL_NAMESPACE"
+
+account_id = "410d32a609504b9993528287b839af0d"
