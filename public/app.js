@@ -435,8 +435,15 @@ async function eliminarEvento() {
 function renderDaysPicker(seleccionados) {
   const cont = $("#tDiasChecks");
   cont.innerHTML = "";
-  if (!state.event) return;
+  if (!state.event) {
+    cont.innerHTML = '<p class="hint" style="color:#d32f2f">Primero creá un evento con sus fechas.</p>';
+    return;
+  }
   const dias = rangoDias(state.event.fechaInicio, state.event.fechaFin);
+  if (!dias.length) {
+    cont.innerHTML = '<p class="hint" style="color:#d32f2f">Este evento no tiene fechas válidas. Editá el evento y poné fecha de inicio y fin.</p>';
+    return;
+  }
   dias.forEach((d, i) => {
     const id = "dia_" + i;
     const wrap = document.createElement("label");
@@ -541,7 +548,10 @@ function bindEvents() {
   $("#btnEliminarEvento").addEventListener("click", eliminarEvento);
   $("#formEvento").addEventListener("submit", submitEvento);
 
-  $("#btnNuevaTarea").addEventListener("click", () => { if (state.event) abrirModalTarea(null); });
+  $("#btnNuevaTarea").addEventListener("click", () => {
+    if (!state.event) { toast("Primero creá un evento para poder agregar tareas.", true); return; }
+    abrirModalTarea(null);
+  });
   $("#formTarea").addEventListener("submit", submitTarea);
   $("#btnTodosDias").addEventListener("click", () => {
     $$("#tDiasChecks input").forEach((c) => { c.checked = true; c.closest(".day-check").classList.add("checked"); });
