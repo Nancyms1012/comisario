@@ -244,6 +244,29 @@ body {
   .task-actions { grid-area: actions; justify-content: flex-end; }
 }
 
+/* ---- Pestañas ---- */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 2px solid var(--gris-borde); }
+.tab {
+  border: none; background: transparent; padding: 10px 16px; font-size: 15px; font-weight: 600;
+  color: var(--gris-texto); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+.tab:hover { color: var(--azul); }
+.tab.active { color: var(--azul); border-bottom-color: var(--azul-claro); }
+
+/* ---- Check list ---- */
+.puesto-block .day-head h3 { text-transform: none; }
+.puesto-footer { padding: 10px 16px; border-top: 1px solid #eef1f6; }
+.check-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 10px 16px; border-bottom: 1px solid #eef1f6;
+}
+.check-row:last-child { border-bottom: none; }
+.check-main { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; flex: 1; }
+.check-main input { width: 18px; height: 18px; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.check-text { font-size: 15px; line-height: 1.4; }
+.check-row.done .check-text { text-decoration: line-through; color: var(--gris-texto); }
+.day-count .icon-btn { font-size: 14px; }
+
 /* ===== Impresión ===== */
 @media print {
   .no-print { display: none !important; }
@@ -255,8 +278,11 @@ body {
   .day-block { page-break-inside: auto; }
   .task-row { page-break-inside: avoid; }
   .badge { border: 1px solid #ccc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .task-check input { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .task-check input, .check-main input { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .check-row { page-break-inside: avoid; }
   a[href]:after { content: ""; }
+  /* Al imprimir, mostrar solo el panel activo (el inactivo tiene hidden) */
+  .tab-panel[hidden] { display: none !important; }
 }
 
 

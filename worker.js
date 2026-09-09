@@ -74,6 +74,7 @@ async function handleApi(request, env, pathname) {
       fechaInicio: body.fechaInicio || null,
       fechaFin: body.fechaFin || null,
       tareas: Array.isArray(body.tareas) ? body.tareas : [],
+      checklist: Array.isArray(body.checklist) ? body.checklist : [],
       actualizado: new Date().toISOString(),
     };
 

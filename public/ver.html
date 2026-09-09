@@ -31,6 +31,33 @@
           <label for="eventSelect" class="label-inline">Evento</label>
           <select id="eventSelect" class="select"></select>
         </div>
+      </div>
+    </section>
+
+    <section class="card empty-state no-print" id="emptyState" hidden>
+      <div class="empty-icon">📋</div>
+      <h2>No hay nada para mostrar</h2>
+      <p>Todavía no hay eventos publicados o no hay nada que coincida con el filtro.</p>
+    </section>
+
+    <section class="card event-header" id="eventHeader" hidden>
+      <div class="event-title-row">
+        <h2 id="eventTitle">—</h2>
+        <span id="eventDates" class="event-dates">—</span>
+      </div>
+      <div class="event-stats" id="eventStats"></div>
+      <p id="filterNote" class="hint" hidden></p>
+    </section>
+
+    <!-- Pestañas -->
+    <nav class="tabs no-print" id="tabs" hidden>
+      <button class="tab active" data-tab="cronograma" type="button">📅 Cronograma</button>
+      <button class="tab" data-tab="checklist" type="button">✅ Check list por puesto</button>
+    </nav>
+
+    <!-- Panel Cronograma -->
+    <div id="panelCronograma" class="tab-panel">
+      <section class="card no-print" id="cronoFiltros" hidden>
         <div class="filters">
           <label class="label-inline" for="filtroResponsable">Responsable</label>
           <select id="filtroResponsable" class="select select-sm"><option value="">Todos</option></select>
@@ -46,25 +73,20 @@
             <option value="completada">Completada</option>
           </select>
         </div>
-      </div>
-    </section>
+      </section>
+      <section id="daysContainer" class="days-container"></section>
+    </div>
 
-    <section class="card empty-state no-print" id="emptyState" hidden>
-      <div class="empty-icon">📋</div>
-      <h2>No hay tareas para mostrar</h2>
-      <p>Todavía no hay eventos publicados o no hay tareas que coincidan con el filtro.</p>
-    </section>
-
-    <section class="card event-header" id="eventHeader" hidden>
-      <div class="event-title-row">
-        <h2 id="eventTitle">—</h2>
-        <span id="eventDates" class="event-dates">—</span>
-      </div>
-      <div class="event-stats" id="eventStats"></div>
-      <p id="filterNote" class="hint" hidden></p>
-    </section>
-
-    <section id="daysContainer" class="days-container"></section>
+    <!-- Panel Check list -->
+    <div id="panelChecklist" class="tab-panel" hidden>
+      <section class="card no-print" id="checklistFiltros">
+        <div class="filters">
+          <label class="label-inline" for="filtroPuesto">Puesto</label>
+          <select id="filtroPuesto" class="select select-sm"><option value="">Todos</option></select>
+        </div>
+      </section>
+      <section id="checklistContainer" class="days-container"></section>
+    </div>
   </main>
 
   <footer class="footer no-print">

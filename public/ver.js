@@ -60,8 +60,11 @@ async function apiGetEvent(id) {
 /* ---- Permitir enlace directo: ver.html?evento=<id>&responsable=<nombre> ---- */
 function getParams() {
   const p = new URLSearchParams(location.search);
-  return { evento: p.get("evento"), responsable: p.get("responsable") };
+  return { evento: p.get("evento"), responsable: p.get("responsable"), puesto: p.get("puesto") };
 }
+
+let tabActual = "cronograma";
+let pendingPuesto = null;
 
 async function init() {
   bind();
@@ -83,10 +86,8 @@ async function init() {
       : state.eventsIndex[0].id;
     await selectEvent(target);
     $("#eventSelect").value = target;
-    if (params.responsable) {
-      // aplicar tras poblar el filtro
-      pendingResponsable = params.responsable;
-    }
+    if (params.responsable) pendingResponsable = params.responsable;
+    if (params.puesto) { pendingPuesto = params.puesto; tabActual = "checklist"; }
   }
   renderAll();
 }
@@ -121,10 +122,90 @@ function renderEventSelect() {
 function renderAll() {
   const has = !!state.event;
   $("#eventHeader").hidden = !has;
+  $("#tabs").hidden = !has;
+  $("#cronoFiltros").hidden = !has;
   renderResponsables();
   renderDiaFilter();
+  renderPuestoFilter();
   renderHeader();
   renderDays();
+  renderChecklist();
+  aplicarTab();
+}
+
+function aplicarTab() {
+  $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tabActual));
+  const has = !!state.event;
+  $("#panelCronograma").hidden = !has || tabActual !== "cronograma";
+  $("#panelChecklist").hidden = !has || tabActual !== "checklist";
+}
+
+function getChecklist() {
+  return (state.event && Array.isArray(state.event.checklist)) ? state.event.checklist : [];
+}
+
+function renderPuestoFilter() {
+  const fp = $("#filtroPuesto");
+  if (!fp) return;
+  const prev = fp.value;
+  fp.innerHTML = '<option value="">Todos</option>';
+  getChecklist().forEach((p) => {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = p.nombre;
+    fp.appendChild(o);
+  });
+  if (pendingPuesto) {
+    // permitir filtrar por nombre o id de puesto vía URL
+    const match = getChecklist().find((p) => p.id === pendingPuesto || p.nombre.toLowerCase() === pendingPuesto.toLowerCase());
+    if (match) fp.value = match.id;
+    pendingPuesto = null;
+  } else {
+    fp.value = prev;
+  }
+}
+
+function renderChecklist() {
+  const cont = $("#checklistContainer");
+  if (!cont) return;
+  cont.innerHTML = "";
+  if (!state.event) return;
+  const filtro = $("#filtroPuesto").value;
+  const lista = getChecklist();
+  const puestos = filtro ? lista.filter((p) => p.id === filtro) : lista;
+
+  if (!puestos.length) {
+    cont.innerHTML = `<div class="card"><p class="hint">No hay check list para este evento.</p></div>`;
+    return;
+  }
+
+  puestos.forEach((p) => {
+    const total = p.funciones.length;
+    const hechas = p.funciones.filter((f) => f.hecho).length;
+    const block = document.createElement("div");
+    block.className = "day-block puesto-block";
+    block.innerHTML = `
+      <div class="day-head">
+        <h3>👤 ${escapeHtml(p.nombre)}</h3>
+        <span class="day-count">${hechas}/${total} listas</span>
+      </div>
+      <div class="day-body puesto-body"></div>`;
+    const body = block.querySelector(".puesto-body");
+    if (!p.funciones.length) {
+      body.innerHTML = `<div class="check-row"><span class="task-notas">Sin funciones.</span></div>`;
+    } else {
+      p.funciones.forEach((f) => {
+        const row = document.createElement("div");
+        row.className = "check-row" + (f.hecho ? " done" : "");
+        row.innerHTML = `
+          <div class="check-main">
+            <span>${f.hecho ? "✅" : "⬜"}</span>
+            <span class="check-text">${escapeHtml(f.texto)}</span>
+          </div>`;
+        body.appendChild(row);
+      });
+    }
+    cont.appendChild(block);
+  });
 }
 
 function renderResponsables() {
@@ -266,6 +347,9 @@ function bind() {
   });
   ["filtroResponsable", "filtroDia", "filtroEstado"].forEach((id) =>
     $("#" + id).addEventListener("change", () => { renderHeader(); renderDays(); }));
+  $("#filtroPuesto").addEventListener("change", renderChecklist);
+  $$(".tab").forEach((b) =>
+    b.addEventListener("click", () => { tabActual = b.dataset.tab; aplicarTab(); }));
   $("#btnImprimir").addEventListener("click", () => window.print());
 }
 

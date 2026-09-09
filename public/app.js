@@ -16,6 +16,56 @@ let state = {
 
 const CATEGORIAS = ["Reunión", "Briefing", "Control técnico", "Seguridad", "Cronometraje", "Logística", "Premiación", "Otro"];
 
+// Puestos y funciones estándar (precarga del check list)
+const PUESTOS_BASE = [
+  {
+    nombre: "Juez Salida",
+    funciones: [
+      "Chequeo de corredores en boxes",
+      "Coordinar con los cronos y juez de llegada la salida",
+      "Una vez salida la competencia, trasladarse al 80% para que no se pasen los corredores",
+    ],
+  },
+  {
+    nombre: "Juez 80%",
+    funciones: [
+      "Levantar planillaje",
+      "Coordinar con Kimberly y Josue para garantizar que los corredores salgan",
+      "Entrega documentación al comisario",
+    ],
+  },
+  {
+    nombre: "Juez Llegada",
+    funciones: [
+      "Levantar planillaje",
+      "Coordinar con juez de salida y cronos la salida",
+      "Comunicar por radio al 80% el tiempo de cada categoría por vuelta",
+      "Llevar registro de los tiempos",
+      "Coordinar con la persona a cargo de las paletas y campana para indicarle # de vueltas y tiempo para tocar campana",
+      "Recolectar los registros de los cronos y entregar un solo paquete al secretario",
+    ],
+  },
+  {
+    nombre: "Cronometrista",
+    funciones: [
+      "Llevar registro de los tiempos",
+      "Llevar control de respaldo de vueltas por categoría",
+      "Entregar registro de tiempos a Juez de llegada una vez finalizada cada competencia",
+    ],
+  },
+];
+
+// Genera un checklist nuevo a partir de los puestos base
+function checklistBase() {
+  return PUESTOS_BASE.map((p) => ({
+    id: uid(),
+    nombre: p.nombre,
+    funciones: p.funciones.map((f) => ({ id: uid(), texto: f, hecho: false })),
+  }));
+}
+
+let tabActual = "cronograma";
+
 /* ---------- Utilidades ---------- */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -201,12 +251,24 @@ async function selectEvent(id) {
 function renderAll() {
   renderEventSelect();
   const hasEvents = state.eventsIndex.length > 0;
+  const hayEvento = hasEvents && !!state.event;
   $("#emptyState").hidden = hasEvents;
-  $("#eventHeader").hidden = !hasEvents || !state.event;
-  $("#taskToolbar").hidden = !hasEvents || !state.event;
+  $("#eventHeader").hidden = !hayEvento;
+  $("#tabs").hidden = !hayEvento;
+  $("#taskToolbar").hidden = !hayEvento;
   renderEventHeader();
   renderFilters();
   renderDays();
+  renderChecklistFilter();
+  renderChecklist();
+  aplicarTab();
+}
+
+function aplicarTab() {
+  $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tabActual));
+  const hayEvento = !!state.event;
+  $("#panelCronograma").hidden = !hayEvento || tabActual !== "cronograma";
+  $("#panelChecklist").hidden = !hayEvento || tabActual !== "checklist";
 }
 
 function renderEventSelect() {
@@ -246,11 +308,19 @@ function renderEventHeader() {
   const comp = tareas.filter((t) => t.estado === "completada").length;
   const pend = tareas.filter((t) => t.estado === "pendiente").length;
   const proc = tareas.filter((t) => t.estado === "en-proceso").length;
+
+  const cl = getChecklist();
+  const totFun = cl.reduce((n, p) => n + p.funciones.length, 0);
+  const hechFun = cl.reduce((n, p) => n + p.funciones.filter((f) => f.hecho).length, 0);
+
   $("#eventStats").innerHTML = `
     <span class="stat"><b>${total}</b> tareas</span>
     <span class="stat"><b>${pend}</b> pendientes</span>
     <span class="stat"><b>${proc}</b> en proceso</span>
     <span class="stat"><b>${comp}</b> completadas</span>
+    <span class="stat">·</span>
+    <span class="stat"><b>${cl.length}</b> puestos</span>
+    <span class="stat"><b>${hechFun}/${totFun}</b> funciones listas</span>
   `;
 }
 
@@ -372,6 +442,192 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+/* ========== CHECK LIST POR PUESTO ========== */
+
+function getChecklist() {
+  if (!state.event) return [];
+  if (!Array.isArray(state.event.checklist)) state.event.checklist = [];
+  return state.event.checklist;
+}
+
+function renderChecklistFilter() {
+  const fp = $("#filtroPuesto");
+  if (!fp) return;
+  const prev = fp.value;
+  fp.innerHTML = '<option value="">Todos</option>';
+  getChecklist().forEach((p) => {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = p.nombre;
+    fp.appendChild(o);
+  });
+  fp.value = prev;
+}
+
+function renderChecklist() {
+  const cont = $("#checklistContainer");
+  if (!cont) return;
+  cont.innerHTML = "";
+  if (!state.event) return;
+  const lista = getChecklist();
+  const filtro = $("#filtroPuesto").value;
+  const puestos = filtro ? lista.filter((p) => p.id === filtro) : lista;
+
+  if (!puestos.length) {
+    cont.innerHTML = `<div class="card"><p class="hint">No hay puestos aún. Agregá uno con “＋ Nuevo puesto” o usá “↺ Cargar puestos estándar”.</p></div>`;
+    return;
+  }
+
+  puestos.forEach((p) => {
+    const total = p.funciones.length;
+    const hechas = p.funciones.filter((f) => f.hecho).length;
+    const block = document.createElement("div");
+    block.className = "day-block puesto-block";
+    block.innerHTML = `
+      <div class="day-head">
+        <h3>👤 ${escapeHtml(p.nombre)}</h3>
+        <span class="day-count">${hechas}/${total} listas
+          <button class="icon-btn no-print" data-edit-puesto="${p.id}" title="Editar puesto">✏️</button>
+          <button class="icon-btn no-print" data-del-puesto="${p.id}" title="Eliminar puesto">🗑️</button>
+        </span>
+      </div>
+      <div class="day-body puesto-body"></div>
+      <div class="puesto-footer no-print">
+        <button class="btn btn-xs" data-add-funcion="${p.id}">＋ Agregar función</button>
+      </div>
+    `;
+    const body = block.querySelector(".puesto-body");
+    if (!p.funciones.length) {
+      body.innerHTML = `<div class="check-row"><span class="task-notas">Sin funciones. Agregá una abajo.</span></div>`;
+    } else {
+      p.funciones.forEach((f) => body.appendChild(renderFuncionRow(p.id, f)));
+    }
+    cont.appendChild(block);
+  });
+}
+
+function renderFuncionRow(puestoId, f) {
+  const row = document.createElement("div");
+  row.className = "check-row" + (f.hecho ? " done" : "");
+  row.innerHTML = `
+    <label class="check-main">
+      <input type="checkbox" ${f.hecho ? "checked" : ""} data-check-funcion="${puestoId}:${f.id}" />
+      <span class="check-text">${escapeHtml(f.texto)}</span>
+    </label>
+    <div class="task-actions no-print">
+      <button class="icon-btn" data-edit-funcion="${puestoId}:${f.id}" title="Editar">✏️</button>
+      <button class="icon-btn" data-del-funcion="${puestoId}:${f.id}" title="Eliminar">🗑️</button>
+    </div>
+  `;
+  return row;
+}
+
+/* ---- Puestos: modal y CRUD ---- */
+function abrirModalPuesto(puesto) {
+  $("#modalPuestoTitle").textContent = puesto ? "Editar puesto" : "Nuevo puesto";
+  $("#formPuesto").reset();
+  $("#pId").value = puesto ? puesto.id : "";
+  $("#pNombre").value = puesto ? puesto.nombre : "";
+  openModal("modalPuesto");
+}
+
+async function submitPuesto(e) {
+  e.preventDefault();
+  const nombre = $("#pNombre").value.trim();
+  if (!nombre) return;
+  const id = $("#pId").value;
+  const lista = getChecklist();
+  if (id) {
+    const p = lista.find((x) => x.id === id);
+    if (p) p.nombre = nombre;
+  } else {
+    lista.push({ id: uid(), nombre, funciones: [] });
+  }
+  await persistEvent();
+  closeModal("modalPuesto");
+  renderChecklistFilter();
+  renderChecklist();
+  renderEventHeader();
+  toast(id ? "Puesto actualizado." : "Puesto agregado.");
+}
+
+async function eliminarPuesto(id) {
+  const lista = getChecklist();
+  const p = lista.find((x) => x.id === id);
+  if (!p) return;
+  if (!confirm(`¿Eliminar el puesto "${p.nombre}" y todas sus funciones?`)) return;
+  state.event.checklist = lista.filter((x) => x.id !== id);
+  await persistEvent();
+  renderChecklistFilter();
+  renderChecklist();
+  renderEventHeader();
+  toast("Puesto eliminado.");
+}
+
+/* ---- Funciones: modal y CRUD ---- */
+function abrirModalFuncion(puestoId, funcion) {
+  $("#modalFuncionTitle").textContent = funcion ? "Editar función" : "Nueva función";
+  $("#formFuncion").reset();
+  $("#fPuestoId").value = puestoId;
+  $("#fId").value = funcion ? funcion.id : "";
+  $("#fTexto").value = funcion ? funcion.texto : "";
+  openModal("modalFuncion");
+}
+
+async function submitFuncion(e) {
+  e.preventDefault();
+  const texto = $("#fTexto").value.trim();
+  if (!texto) return;
+  const puestoId = $("#fPuestoId").value;
+  const fId = $("#fId").value;
+  const p = getChecklist().find((x) => x.id === puestoId);
+  if (!p) return;
+  if (fId) {
+    const f = p.funciones.find((x) => x.id === fId);
+    if (f) f.texto = texto;
+  } else {
+    p.funciones.push({ id: uid(), texto, hecho: false });
+  }
+  await persistEvent();
+  closeModal("modalFuncion");
+  renderChecklist();
+  renderEventHeader();
+  toast(fId ? "Función actualizada." : "Función agregada.");
+}
+
+async function eliminarFuncion(puestoId, fId) {
+  const p = getChecklist().find((x) => x.id === puestoId);
+  if (!p) return;
+  const f = p.funciones.find((x) => x.id === fId);
+  if (!f) return;
+  if (!confirm("¿Eliminar esta función?")) return;
+  p.funciones = p.funciones.filter((x) => x.id !== fId);
+  await persistEvent();
+  renderChecklist();
+  renderEventHeader();
+  toast("Función eliminada.");
+}
+
+async function toggleFuncion(puestoId, fId, hecho) {
+  const p = getChecklist().find((x) => x.id === puestoId);
+  if (!p) return;
+  const f = p.funciones.find((x) => x.id === fId);
+  if (!f) return;
+  f.hecho = hecho;
+  await persistEvent();
+  renderChecklist();
+}
+
+async function cargarPuestosBase() {
+  const lista = getChecklist();
+  if (lista.length && !confirm("Esto agregará los puestos estándar. Si ya cargaste algunos, se duplicarán. ¿Continuar?")) return;
+  state.event.checklist = lista.concat(checklistBase());
+  await persistEvent();
+  renderChecklistFilter();
+  renderChecklist();
+  renderEventHeader();
+  toast("Puestos estándar cargados.");
+}
+
 /* ---------- Modal Evento ---------- */
 let editandoEvento = false;
 
@@ -407,7 +663,7 @@ async function submitEvento(e) {
     });
     await persistEvent();
   } else {
-    const ev = { id: uid(), nombre, fechaInicio: inicio, fechaFin: fin, tareas: [] };
+    const ev = { id: uid(), nombre, fechaInicio: inicio, fechaFin: fin, tareas: [], checklist: checklistBase() };
     state.event = ev;
     state.currentId = ev.id;
     await persistEvent();
@@ -562,6 +818,55 @@ function bindEvents() {
 
   ["filtroDia", "filtroEstado", "filtroCategoria"].forEach((id) =>
     $("#" + id).addEventListener("change", renderDays));
+
+  // ---- Pestañas ----
+  $$(".tab").forEach((b) =>
+    b.addEventListener("click", () => { tabActual = b.dataset.tab; aplicarTab(); }));
+
+  // ---- Check list ----
+  $("#btnNuevoPuesto").addEventListener("click", () => {
+    if (!state.event) { toast("Primero creá un evento.", true); return; }
+    abrirModalPuesto(null);
+  });
+  $("#btnCargarPuestosBase").addEventListener("click", () => {
+    if (!state.event) { toast("Primero creá un evento.", true); return; }
+    cargarPuestosBase();
+  });
+  $("#formPuesto").addEventListener("submit", submitPuesto);
+  $("#formFuncion").addEventListener("submit", submitFuncion);
+  $("#filtroPuesto").addEventListener("change", renderChecklist);
+
+  // Delegación clicks en el check list
+  $("#checklistContainer").addEventListener("click", (e) => {
+    const editP = e.target.closest("[data-edit-puesto]");
+    const delP = e.target.closest("[data-del-puesto]");
+    const addF = e.target.closest("[data-add-funcion]");
+    const editF = e.target.closest("[data-edit-funcion]");
+    const delF = e.target.closest("[data-del-funcion]");
+    if (editP) {
+      const p = getChecklist().find((x) => x.id === editP.dataset.editPuesto);
+      if (p) abrirModalPuesto(p);
+    } else if (delP) {
+      eliminarPuesto(delP.dataset.delPuesto);
+    } else if (addF) {
+      abrirModalFuncion(addF.dataset.addFuncion, null);
+    } else if (editF) {
+      const [pid, fid] = editF.dataset.editFuncion.split(":");
+      const p = getChecklist().find((x) => x.id === pid);
+      const f = p && p.funciones.find((x) => x.id === fid);
+      if (f) abrirModalFuncion(pid, f);
+    } else if (delF) {
+      const [pid, fid] = delF.dataset.delFuncion.split(":");
+      eliminarFuncion(pid, fid);
+    }
+  });
+  $("#checklistContainer").addEventListener("change", (e) => {
+    const chk = e.target.closest("[data-check-funcion]");
+    if (chk) {
+      const [pid, fid] = chk.dataset.checkFuncion.split(":");
+      toggleFuncion(pid, fid, chk.checked);
+    }
+  });
 
   $("#btnImprimir").addEventListener("click", () => window.print());
 

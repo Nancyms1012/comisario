@@ -59,30 +59,55 @@
       <div class="event-stats" id="eventStats"></div>
     </section>
 
-    <!-- Barra de acciones de tareas -->
-    <section class="card no-print" id="taskToolbar" hidden>
-      <div class="task-toolbar">
-        <button id="btnNuevaTarea" class="btn btn-primary" type="button">＋ Nueva tarea</button>
-        <div class="filters">
-          <label class="label-inline" for="filtroDia">Día</label>
-          <select id="filtroDia" class="select select-sm"><option value="">Todos</option></select>
+    <!-- Pestañas -->
+    <nav class="tabs no-print" id="tabs" hidden>
+      <button class="tab active" data-tab="cronograma" type="button">📅 Cronograma</button>
+      <button class="tab" data-tab="checklist" type="button">✅ Check list por puesto</button>
+    </nav>
 
-          <label class="label-inline" for="filtroEstado">Estado</label>
-          <select id="filtroEstado" class="select select-sm">
-            <option value="">Todos</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="en-proceso">En proceso</option>
-            <option value="completada">Completada</option>
-          </select>
+    <!-- ===== Pestaña: Cronograma ===== -->
+    <div id="panelCronograma" class="tab-panel">
+      <!-- Barra de acciones de tareas -->
+      <section class="card no-print" id="taskToolbar" hidden>
+        <div class="task-toolbar">
+          <button id="btnNuevaTarea" class="btn btn-primary" type="button">＋ Nueva tarea</button>
+          <div class="filters">
+            <label class="label-inline" for="filtroDia">Día</label>
+            <select id="filtroDia" class="select select-sm"><option value="">Todos</option></select>
 
-          <label class="label-inline" for="filtroCategoria">Categoría</label>
-          <select id="filtroCategoria" class="select select-sm"><option value="">Todas</option></select>
+            <label class="label-inline" for="filtroEstado">Estado</label>
+            <select id="filtroEstado" class="select select-sm">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="en-proceso">En proceso</option>
+              <option value="completada">Completada</option>
+            </select>
+
+            <label class="label-inline" for="filtroCategoria">Categoría</label>
+            <select id="filtroCategoria" class="select select-sm"><option value="">Todas</option></select>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Listado de tareas agrupadas por día -->
-    <section id="daysContainer" class="days-container"></section>
+      <!-- Listado de tareas agrupadas por día -->
+      <section id="daysContainer" class="days-container"></section>
+    </div>
+
+    <!-- ===== Pestaña: Check list por puesto ===== -->
+    <div id="panelChecklist" class="tab-panel" hidden>
+      <section class="card no-print" id="checklistToolbar">
+        <div class="task-toolbar">
+          <button id="btnNuevoPuesto" class="btn btn-primary" type="button">＋ Nuevo puesto</button>
+          <div class="filters">
+            <label class="label-inline" for="filtroPuesto">Puesto</label>
+            <select id="filtroPuesto" class="select select-sm"><option value="">Todos</option></select>
+            <button id="btnCargarPuestosBase" class="btn btn-ghost btn-xs" type="button" title="Cargar los puestos y funciones estándar">↺ Cargar puestos estándar</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="checklistContainer" class="days-container"></section>
+    </div>
 
   </main>
 
@@ -200,6 +225,49 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" data-close-modal="modalTarea">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Modal: Puesto ===== -->
+  <div class="modal-backdrop no-print" id="modalPuesto" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalPuestoTitle">
+      <div class="modal-head">
+        <h3 id="modalPuestoTitle">Nuevo puesto</h3>
+        <button class="modal-close" data-close-modal="modalPuesto" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="formPuesto" class="modal-body">
+        <input type="hidden" id="pId" />
+        <label class="field">
+          <span>Nombre del puesto *</span>
+          <input type="text" id="pNombre" required placeholder="Ej: Juez Salida" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modalPuesto">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar puesto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Modal: Función ===== -->
+  <div class="modal-backdrop no-print" id="modalFuncion" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalFuncionTitle">
+      <div class="modal-head">
+        <h3 id="modalFuncionTitle">Nueva función</h3>
+        <button class="modal-close" data-close-modal="modalFuncion" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="formFuncion" class="modal-body">
+        <input type="hidden" id="fPuestoId" />
+        <input type="hidden" id="fId" />
+        <label class="field">
+          <span>Función / tarea del puesto *</span>
+          <textarea id="fTexto" rows="2" required placeholder="Ej: Levantar planillaje"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-modal="modalFuncion">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar función</button>
         </div>
       </form>
     </div>
