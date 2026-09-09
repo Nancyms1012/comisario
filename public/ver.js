@@ -183,9 +183,10 @@ function renderChecklist() {
     const hechas = p.funciones.filter((f) => f.hecho).length;
     const block = document.createElement("div");
     block.className = "day-block puesto-block";
+    const persona = p.persona ? ` <span class="puesto-persona">— ${escapeHtml(p.persona)}</span>` : "";
     block.innerHTML = `
       <div class="day-head">
-        <h3>👤 ${escapeHtml(p.nombre)}</h3>
+        <h3>👤 ${escapeHtml(p.nombre)}${persona}</h3>
         <span class="day-count">${hechas}/${total} listas</span>
       </div>
       <div class="day-body puesto-body"></div>`;

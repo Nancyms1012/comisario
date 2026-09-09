@@ -255,6 +255,7 @@ body {
 
 /* ---- Check list ---- */
 .puesto-block .day-head h3 { text-transform: none; }
+.puesto-persona { font-weight: 400; color: var(--gris-texto); font-size: 14px; }
 .puesto-footer { padding: 10px 16px; border-top: 1px solid #eef1f6; }
 .check-row {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;

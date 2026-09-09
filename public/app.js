@@ -60,8 +60,16 @@ function checklistBase() {
   return PUESTOS_BASE.map((p) => ({
     id: uid(),
     nombre: p.nombre,
+    persona: "",
     funciones: p.funciones.map((f) => ({ id: uid(), texto: f, hecho: false })),
   }));
+}
+
+// Devuelve las funciones estándar de un puesto por su nombre (como objetos {id, texto, hecho})
+function funcionesBaseDe(nombre) {
+  const base = PUESTOS_BASE.find((p) => p.nombre.toLowerCase() === String(nombre).toLowerCase());
+  if (!base) return [];
+  return base.funciones.map((f) => ({ id: uid(), texto: f, hecho: false }));
 }
 
 let tabActual = "cronograma";
@@ -482,11 +490,12 @@ function renderChecklist() {
     const hechas = p.funciones.filter((f) => f.hecho).length;
     const block = document.createElement("div");
     block.className = "day-block puesto-block";
+    const persona = p.persona ? ` <span class="puesto-persona">— ${escapeHtml(p.persona)}</span>` : "";
     block.innerHTML = `
       <div class="day-head">
-        <h3>👤 ${escapeHtml(p.nombre)}</h3>
+        <h3>👤 ${escapeHtml(p.nombre)}${persona}</h3>
         <span class="day-count">${hechas}/${total} listas
-          <button class="icon-btn no-print" data-edit-puesto="${p.id}" title="Editar puesto">✏️</button>
+          <button class="icon-btn no-print" data-edit-puesto="${p.id}" title="Editar puesto / persona">✏️</button>
           <button class="icon-btn no-print" data-del-puesto="${p.id}" title="Eliminar puesto">🗑️</button>
         </span>
       </div>
@@ -522,25 +531,60 @@ function renderFuncionRow(puestoId, f) {
 }
 
 /* ---- Puestos: modal y CRUD ---- */
+const PUESTOS_ESTANDAR = PUESTOS_BASE.map((p) => p.nombre);
+
+// Sincroniza la UI del modal según el puesto elegido
+function actualizarUIPuesto(editando) {
+  const val = $("#pPuesto").value;
+  const esOtro = val === "__otro__";
+  $("#pNombreOtroWrap").hidden = !esOtro;
+  $("#pNombre").required = esOtro;
+  // Mostrar aviso de funciones automáticas solo al CREAR un puesto estándar
+  const esEstandar = PUESTOS_ESTANDAR.includes(val);
+  $("#pHintFunciones").hidden = editando || !esEstandar;
+}
+
 function abrirModalPuesto(puesto) {
   $("#modalPuestoTitle").textContent = puesto ? "Editar puesto" : "Nuevo puesto";
   $("#formPuesto").reset();
   $("#pId").value = puesto ? puesto.id : "";
-  $("#pNombre").value = puesto ? puesto.nombre : "";
+  $("#pPersona").value = puesto ? (puesto.persona || "") : "";
+
+  if (puesto) {
+    // Editar: si el nombre es estándar lo selecciona; si no, "Otro"
+    if (PUESTOS_ESTANDAR.includes(puesto.nombre)) {
+      $("#pPuesto").value = puesto.nombre;
+      $("#pNombre").value = "";
+    } else {
+      $("#pPuesto").value = "__otro__";
+      $("#pNombre").value = puesto.nombre;
+    }
+  } else {
+    $("#pPuesto").value = PUESTOS_ESTANDAR[0];
+    $("#pNombre").value = "";
+  }
+  actualizarUIPuesto(!!puesto);
   openModal("modalPuesto");
+}
+
+function nombrePuestoDelModal() {
+  const val = $("#pPuesto").value;
+  return val === "__otro__" ? $("#pNombre").value.trim() : val;
 }
 
 async function submitPuesto(e) {
   e.preventDefault();
-  const nombre = $("#pNombre").value.trim();
-  if (!nombre) return;
+  const nombre = nombrePuestoDelModal();
+  if (!nombre) { toast("Escribí el nombre del puesto.", true); return; }
+  const persona = $("#pPersona").value.trim();
   const id = $("#pId").value;
   const lista = getChecklist();
   if (id) {
     const p = lista.find((x) => x.id === id);
-    if (p) p.nombre = nombre;
+    if (p) { p.nombre = nombre; p.persona = persona; }
   } else {
-    lista.push({ id: uid(), nombre, funciones: [] });
+    // Al crear, si es un puesto estándar traemos sus funciones automáticamente
+    lista.push({ id: uid(), nombre, persona, funciones: funcionesBaseDe(nombre) });
   }
   await persistEvent();
   closeModal("modalPuesto");
@@ -833,6 +877,7 @@ function bindEvents() {
     cargarPuestosBase();
   });
   $("#formPuesto").addEventListener("submit", submitPuesto);
+  $("#pPuesto").addEventListener("change", () => actualizarUIPuesto($("#pId").value !== ""));
   $("#formFuncion").addEventListener("submit", submitFuncion);
   $("#filtroPuesto").addEventListener("change", renderChecklist);
 

@@ -240,9 +240,24 @@
       <form id="formPuesto" class="modal-body">
         <input type="hidden" id="pId" />
         <label class="field">
-          <span>Nombre del puesto *</span>
-          <input type="text" id="pNombre" required placeholder="Ej: Juez Salida" />
+          <span>Puesto *</span>
+          <select id="pPuesto">
+            <option value="Juez Salida">Juez Salida</option>
+            <option value="Juez 80%">Juez 80%</option>
+            <option value="Juez Llegada">Juez Llegada</option>
+            <option value="Cronometrista">Cronometrista</option>
+            <option value="__otro__">Otro (escribir)…</option>
+          </select>
         </label>
+        <label class="field" id="pNombreOtroWrap" hidden>
+          <span>Nombre del puesto *</span>
+          <input type="text" id="pNombre" placeholder="Ej: Juez de vuelta" />
+        </label>
+        <label class="field">
+          <span>Persona a cargo</span>
+          <input type="text" id="pPersona" placeholder="Ej: María González" />
+        </label>
+        <p class="hint" id="pHintFunciones" hidden>Se cargarán automáticamente las funciones estándar de este puesto.</p>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" data-close-modal="modalPuesto">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar puesto</button>
